@@ -22,6 +22,8 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import dev.dejvokep.boostedyaml.serialization.standard.StandardSerializer;
+
 import java.util.*;
 
 /**
@@ -36,7 +38,7 @@ import java.util.*;
  * This class is designed around the singleton pattern. Use {@link #getInstance()} to obtain an instance of this
  * serializer.
  */
-public class SpigotSerializer implements YamlSerializer {
+public class SpigotSerializer extends StandardSerializer {
 
     /**
      * The serializer instance.
@@ -57,11 +59,17 @@ public class SpigotSerializer implements YamlSerializer {
      * serializer.
      */
     private SpigotSerializer() {
+        super(StandardSerializer.DEFAULT_SERIALIZED_TYPE_KEY);
     }
 
     @Override
     @Nullable
     public Object deserialize(@NotNull Map<Object, Object> map) {
+        Object standard = super.deserialize(map);
+        if (standard != null) {
+            return standard;
+        }
+
         // Does not contain the type key
         if (!map.containsKey(ConfigurationSerialization.SERIALIZED_TYPE_KEY))
             return null;
@@ -87,6 +95,11 @@ public class SpigotSerializer implements YamlSerializer {
     @Nullable
     @Override
     public <T> Map<Object, Object> serialize(@NotNull T object, @NotNull MapSupplier supplier) {
+        Map<Object, Object> standard = super.serialize(object, supplier);
+        if (standard != null) {
+            return standard;
+        }
+
         // Output map
         Map<Object, Object> serialized = supplier.supply(1);
         ConfigurationSerializable cast = (ConfigurationSerializable) object;
@@ -94,12 +107,6 @@ public class SpigotSerializer implements YamlSerializer {
         serialized.putAll((cast).serialize());
         serialized.computeIfAbsent(ConfigurationSerialization.SERIALIZED_TYPE_KEY, k -> ConfigurationSerialization.getAlias(cast.getClass()));
         return serialized;
-    }
-
-    @NotNull
-    @Override
-    public Set<Class<?>> getSupportedClasses() {
-        return Collections.emptySet();
     }
 
     @NotNull
